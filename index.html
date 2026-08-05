@@ -5,107 +5,66 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Usage Console — Anthropic API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     /* ============================================================
-   TOKENS
+   TOKENS — matched to the Prime Automation AI admin dashboard
    ============================================================ */
     :root {
-      color-scheme: light;
+      color-scheme: dark;
 
       /* surfaces & ink */
-      --surface-1: #fcfcfb;
+      --surface-1: #131722;
       /* card / chart surface */
-      --page: #f9f9f7;
-      --text-primary: #0b0b0b;
-      --text-secondary: #52514e;
-      --text-muted: #898781;
-      --grid: #e1e0d9;
-      --axis: #c3c2b7;
-      --border: rgba(11, 11, 11, 0.10);
-      --ghost: rgba(11, 11, 11, 0.04);
-      --ghost-strong: rgba(11, 11, 11, 0.07);
+      --page: #0a0d16;
+      --text-primary: #f5f6f8;
+      --text-secondary: #9aa3b8;
+      --text-muted: #6b7386;
+      --grid: #1f2433;
+      --axis: #2a3040;
+      --border: rgba(255, 255, 255, 0.09);
+      --ghost: rgba(255, 255, 255, 0.045);
+      --ghost-strong: rgba(255, 255, 255, 0.08);
 
       /* categorical — fixed order, never cycled */
-      --series-1: #2a78d6;
+      --series-1: #3b82f6;
       /* blue    */
-      --series-2: #eb6834;
+      --series-2: #f97316;
       /* orange  */
-      --series-3: #1baf7a;
-      /* aqua    */
-      --series-4: #eda100;
-      /* yellow  */
-      --series-5: #e87ba4;
-      /* magenta */
-      --de-emphasis: #c3c2b7;
+      --series-3: #22c55e;
+      /* green   */
+      --series-4: #eab308;
+      /* amber   */
+      --series-5: #a855f7;
+      /* purple  */
+      --de-emphasis: #2e3446;
 
       /* sequential (blue) */
-      --seq-100: #cde2fb;
-      --seq-150: #b7d3f6;
-      --seq-200: #9ec5f4;
-      --seq-250: #86b6ef;
-      --seq-300: #6da7ec;
-      --seq-350: #5598e7;
-      --seq-400: #3987e5;
-      --seq-450: #2a78d6;
-      --seq-500: #256abf;
-      --seq-550: #1c5cab;
-      --seq-600: #184f95;
-      --seq-650: #104281;
-      --seq-700: #0d366b;
+      --seq-100: #16213a;
+      --seq-150: #182848;
+      --seq-200: #1b3157;
+      --seq-250: #1e3c6c;
+      --seq-300: #214980;
+      --seq-350: #275792;
+      --seq-400: #2e66a4;
+      --seq-450: #3b82f6;
+      --seq-500: #4d8ef7;
+      --seq-550: #5f9af8;
+      --seq-600: #7aacf9;
+      --seq-650: #96bffb;
+      --seq-700: #b9d8fd;
 
       /* status — fixed, never themed */
-      --good: #0ca30c;
-      --warning: #fab219;
-      --serious: #ec835a;
-      --critical: #d03b3b;
-      --delta-up-good: #006300;
+      --good: #22c55e;
+      --warning: #eab308;
+      --serious: #f97316;
+      --critical: #ef4444;
+      --delta-up-good: #22c55e;
 
-      --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
-      --radius: 10px;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root:where(:not([data-theme="light"])) {
-        color-scheme: dark;
-        --surface-1: #1a1a19;
-        --page: #0d0d0d;
-        --text-primary: #ffffff;
-        --text-secondary: #c3c2b7;
-        --text-muted: #898781;
-        --grid: #2c2c2a;
-        --axis: #383835;
-        --border: rgba(255, 255, 255, 0.10);
-        --ghost: rgba(255, 255, 255, 0.05);
-        --ghost-strong: rgba(255, 255, 255, 0.09);
-        --series-1: #3987e5;
-        --series-2: #d95926;
-        --series-3: #199e70;
-        --series-4: #c98500;
-        --series-5: #d55181;
-        --de-emphasis: #383835;
-        --delta-up-good: #0ca30c;
-      }
-    }
-
-    :root[data-theme="dark"] {
-      color-scheme: dark;
-      --surface-1: #1a1a19;
-      --page: #0d0d0d;
-      --text-primary: #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted: #898781;
-      --grid: #2c2c2a;
-      --axis: #383835;
-      --border: rgba(255, 255, 255, 0.10);
-      --ghost: rgba(255, 255, 255, 0.05);
-      --ghost-strong: rgba(255, 255, 255, 0.09);
-      --series-1: #3987e5;
-      --series-2: #d95926;
-      --series-3: #199e70;
-      --series-4: #c98500;
-      --series-5: #d55181;
-      --de-emphasis: #383835;
-      --delta-up-good: #0ca30c;
+      --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --radius: 14px;
     }
 
     /* ============================================================
@@ -136,7 +95,7 @@
     h2,
     h3 {
       margin: 0;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: -0.01em;
     }
 
@@ -170,9 +129,9 @@
     .brand-mark {
       width: 30px;
       height: 30px;
-      border-radius: 8px;
+      border-radius: 9px;
       flex: none;
-      background: linear-gradient(150deg, var(--series-1), var(--seq-650));
+      background: linear-gradient(135deg, #fb923c, #a855f7);
       display: grid;
       place-items: center;
       color: #fff;
@@ -214,22 +173,6 @@
       flex: none;
     }
 
-    .btn {
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 7px 12px;
-      font-size: 13px;
-      cursor: pointer;
-      color: var(--text-secondary);
-    }
-
-    .btn:hover {
-      background: var(--ghost);
-      color: var(--text-primary);
-    }
-
-    .btn:focus-visible,
     .chart:focus-visible,
     select:focus-visible,
     input:focus-visible {
@@ -593,18 +536,7 @@
       border-radius: 5px;
       margin-top: 6px;
       overflow: hidden;
-      background: var(--seq-100);
-    }
-
-    :root[data-theme="dark"] .meter-track,
-    :root:where(:not([data-theme="light"])) .meter-track {
-      background: var(--seq-700);
-    }
-
-    @media (prefers-color-scheme: light) {
-      :root:where(:not([data-theme="dark"])) .meter-track {
-        background: var(--seq-100);
-      }
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .meter-fill {
@@ -739,13 +671,9 @@
       width: 64px;
       height: 6px;
       border-radius: 3px;
-      background: var(--seq-100);
+      background: rgba(255, 255, 255, 0.06);
       overflow: hidden;
       flex: none;
-    }
-
-    :root[data-theme="dark"] .bar-cell .track {
-      background: var(--seq-700);
     }
 
     .bar-cell .fill {
@@ -847,7 +775,6 @@
       <div class="topbar-actions">
         <span class="pill"><span class="dot" style="background:var(--good)"></span> API healthy</span>
         <span class="pill" id="lastSync">Synced —</span>
-        <button class="btn" id="themeBtn" type="button">Dark</button>
       </div>
     </header>
 
@@ -2305,20 +2232,6 @@
           table.classList.toggle("hidden", !showTable);
         });
       });
-
-      const themeBtn = el("themeBtn");
-      function currentDark() {
-        const attr = document.documentElement.getAttribute("data-theme");
-        if (attr) return attr === "dark";
-        return window.matchMedia("(prefers-color-scheme: dark)").matches;
-      }
-      function syncBtn() { themeBtn.textContent = currentDark() ? "Light" : "Dark"; }
-      themeBtn.addEventListener("click", () => {
-        document.documentElement.setAttribute("data-theme", currentDark() ? "light" : "dark");
-        syncBtn();
-        render();
-      });
-      syncBtn();
 
       let rt = null;
       window.addEventListener("resize", () => {
