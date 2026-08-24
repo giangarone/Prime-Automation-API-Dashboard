@@ -901,9 +901,9 @@
       { id: "u07", name: "Priya Raghunathan", plan: "Pro", weight: 1.4 },
       { id: "u08", name: "Lukas Brandt", plan: "Pro", weight: 1.1 },
       { id: "u09", name: "Fatima El-Amrani", plan: "Pro", weight: 0.9 },
-      { id: "u10", name: "Tomás Oliveira", plan: "Free", weight: 0.6 },
-      { id: "u11", name: "Mira Sandoval", plan: "Free", weight: 0.45 },
-      { id: "u12", name: "Sam Okonkwo", plan: "Free", weight: 0.35 },
+      { id: "u10", name: "Tomás Oliveira", plan: "Pro", weight: 0.6 },
+      { id: "u11", name: "Mira Sandoval", plan: "Pro", weight: 0.45 },
+      { id: "u12", name: "Sam Okonkwo", plan: "Pro", weight: 0.35 },
     ];
 
     /* deterministic PRNG so the page renders identically every load */
@@ -1433,12 +1433,6 @@
         {
           label: "Output tokens", value: compact(cur.outputTokens),
           cur: cur.outputTokens, prev: prev.outputTokens, goodUp: true, spark: series((a) => a.outputTokens)
-        },
-        {
-          label: "Error rate", value: pct(cur.requests ? cur.errors / cur.requests : 0, 2),
-          cur: cur.requests ? cur.errors / cur.requests : 0,
-          prev: prev.requests ? prev.errors / prev.requests : 0,
-          goodUp: false, spark: series((a) => (a.requests ? a.errors / a.requests : 0))
         },
       ];
 
