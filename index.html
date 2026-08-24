@@ -217,6 +217,15 @@
       min-width: 150px;
     }
 
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239aa3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 30px;
+    }
+
     .filters .spacer {
       flex: 1 1 auto;
     }
@@ -242,7 +251,7 @@
     .panel-filters input[type="search"] {
       min-width: 0;
       width: 100%;
-      background: var(--surface-1);
+      background-color: var(--surface-1);
     }
 
     .panel-filters .field {
@@ -883,18 +892,18 @@
     ];
 
     const USERS = [
-      { id: "u01", name: "Nordwind Capital", plan: "Institutional", weight: 5.4 },
-      { id: "u02", name: "Helios Quant Desk", plan: "Institutional", weight: 4.1 },
-      { id: "u03", name: "Vertex Alpha Fund", plan: "Institutional", weight: 3.3 },
-      { id: "u04", name: "Blue Ridge Systematic", plan: "Institutional", weight: 2.6 },
+      { id: "u01", name: "Marcus Feldman", plan: "Elite", weight: 5.4 },
+      { id: "u02", name: "Sofia Lindqvist", plan: "Elite", weight: 4.1 },
+      { id: "u03", name: "Rajesh Menon", plan: "Elite", weight: 3.3 },
+      { id: "u04", name: "Camille Dubois", plan: "Elite", weight: 2.6 },
       { id: "u05", name: "Aria Vasquez", plan: "Pro", weight: 1.9 },
       { id: "u06", name: "Kenji Watanabe", plan: "Pro", weight: 1.6 },
       { id: "u07", name: "Priya Raghunathan", plan: "Pro", weight: 1.4 },
       { id: "u08", name: "Lukas Brandt", plan: "Pro", weight: 1.1 },
       { id: "u09", name: "Fatima El-Amrani", plan: "Pro", weight: 0.9 },
-      { id: "u10", name: "Tomás Oliveira", plan: "Retail", weight: 0.6 },
-      { id: "u11", name: "Mira Sandoval", plan: "Retail", weight: 0.45 },
-      { id: "u12", name: "Sam Okonkwo", plan: "Retail", weight: 0.35 },
+      { id: "u10", name: "Tomás Oliveira", plan: "Free", weight: 0.6 },
+      { id: "u11", name: "Mira Sandoval", plan: "Free", weight: 0.45 },
+      { id: "u12", name: "Sam Okonkwo", plan: "Free", weight: 0.35 },
     ];
 
     /* deterministic PRNG so the page renders identically every load */
@@ -930,7 +939,7 @@
       const userStrategies = {};
       USERS.forEach((u, ui) => {
         const picks = new Set(["general"]);
-        const n = u.plan === "Institutional" ? 4 : u.plan === "Pro" ? 3 : 2;
+        const n = u.plan === "Elite" ? 4 : u.plan === "Pro" ? 3 : 2;
         for (let k = 0; k < n; k++) picks.add(STRATEGIES[(ui * 3 + k * 2 + 1) % 8].id);
         userStrategies[u.id] = [...picks];
       });
