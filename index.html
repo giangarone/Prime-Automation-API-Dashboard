@@ -766,12 +766,7 @@
               <option value="all">All users</option>
             </select>
           </div>
-          <div class="field">
-            <label for="fStratSurface">Surface</label>
-            <select id="fStratSurface">
-              <option value="all">All surfaces</option>
-            </select>
-          </div>
+          
           <div class="field">
             <label for="stratSearch">Strategy</label>
             <input type="search" id="stratSearch" placeholder="Filter strategies&hellip;"
@@ -1071,7 +1066,7 @@
       // "Usage by user" panel
       userSort: { key: "cost", dir: -1 }, userQuery: "", userPlan: "all", userStrategy: "all",
       // "Spend by AI strategy" panel
-      stratSort: { key: "value", dir: -1 }, stratQuery: "", stratUser: "all", stratSurface: "all",
+      stratSort: { key: "value", dir: -1 }, stratQuery: "", stratUser: "all",
     };
 
     function rangeDays(range) {
@@ -1475,8 +1470,7 @@
        table are two views of the same filtered row set. */
     function strategyRecords(recs) {
       return recs.filter((r) =>
-        (state.stratUser === "all" || r.userId === state.stratUser) &&
-        (state.stratSurface === "all" || r.surfaceId === state.stratSurface)
+        state.stratUser === "all" || r.userId === state.stratUser
       );
     }
 
@@ -1709,7 +1703,6 @@
     function populateSelects() {
       // strategy panel
       addOptions(el("fStratUser"), USERS.map((u) => [u.id, u.name]));
-      addOptions(el("fStratSurface"), SURFACES.map((s) => [s.id, s.name]));
 
       // user panel
       const plans = [...new Set(USERS.map((u) => u.plan))];
@@ -1751,10 +1744,9 @@
         state.stratQuery = e.target.value.trim(); redrawStrategy();
       });
       el("fStratUser").addEventListener("change", (e) => { state.stratUser = e.target.value; redrawStrategy(); });
-      el("fStratSurface").addEventListener("change", (e) => { state.stratSurface = e.target.value; redrawStrategy(); });
       el("stratReset").addEventListener("click", () => {
-        state.stratQuery = ""; state.stratUser = "all"; state.stratSurface = "all";
-        el("stratSearch").value = ""; el("fStratUser").value = "all"; el("fStratSurface").value = "all";
+        state.stratQuery = ""; state.stratUser = "all";
+        el("stratSearch").value = ""; el("fStratUser").value = "all";
         redrawStrategy();
       });
 
