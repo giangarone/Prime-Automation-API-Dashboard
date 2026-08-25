@@ -150,8 +150,25 @@
 
     .topbar-actions {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 8px;
+    }
+
+    /* the date range scopes the whole page, so it sits in the header and is
+       shaped like the status chips beside it rather than like a panel filter */
+    .topbar-range {
+      min-width: 0;
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 5px 30px 5px 11px;
+      color: var(--text-primary);
+      background-color: var(--surface-1);
+      cursor: pointer;
+    }
+
+    .topbar-range:hover {
+      background-color: var(--ghost-strong);
     }
 
     .pill {
@@ -178,19 +195,6 @@
     input:focus-visible {
       outline: 2px solid var(--series-1);
       outline-offset: 2px;
-    }
-
-    /* ---------- filter row (one row, above everything it scopes) ---------- */
-    .filters {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: flex-end;
-      padding: 12px 14px;
-      margin-bottom: 18px;
-      background: var(--surface-1);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
     }
 
     .field {
@@ -226,8 +230,171 @@
       padding-right: 30px;
     }
 
-    .filters .spacer {
-      flex: 1 1 auto;
+    /* ---------- searchable picker (combobox for large option sets) ----------
+       Used where the option list can run to hundreds or thousands of entries
+       (users, strategies). A plain <select> becomes unusable at that size, so
+       the trigger opens a filtered, keyboard-driven listbox instead. */
+    .picker {
+      position: relative;
+    }
+
+    .picker-btn {
+      display: block;
+      width: 100%;
+      font: inherit;
+      font-size: 13px;
+      text-align: left;
+      color: var(--text-primary);
+      background-color: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 30px 6px 9px;
+      cursor: pointer;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%239aa3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+
+    .picker-btn:hover {
+      background-color: var(--ghost-strong);
+    }
+
+    .picker-btn:focus-visible {
+      outline: 2px solid var(--series-1);
+      outline-offset: 2px;
+    }
+
+    .picker.open .picker-btn {
+      border-color: var(--series-1);
+    }
+
+    /* a non-default selection reads as an active filter */
+    .picker-btn[data-active="true"] {
+      color: var(--text-primary);
+      border-color: var(--seq-400);
+    }
+
+    .picker-btn[data-active="false"] {
+      color: var(--text-secondary);
+    }
+
+    .picker-pop {
+      position: absolute;
+      z-index: 40;
+      top: calc(100% + 4px);
+      left: 0;
+      width: 280px;
+      max-width: min(280px, 78vw);
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, .55);
+      overflow: hidden;
+    }
+
+    /* flip to the right edge when the field sits near the viewport edge */
+    .picker-pop.flip-right {
+      left: auto;
+      right: 0;
+    }
+
+    .picker-search-wrap {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .picker-search {
+      font: inherit;
+      font-size: 13px;
+      width: 100%;
+      color: var(--text-primary);
+      background: var(--page);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 9px;
+    }
+
+    .picker-search::placeholder {
+      color: var(--text-muted);
+    }
+
+    .picker-search:focus-visible {
+      outline: 2px solid var(--series-1);
+      outline-offset: -1px;
+    }
+
+    .picker-list {
+      list-style: none;
+      margin: 0;
+      padding: 4px;
+      max-height: 264px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .picker-opt {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .picker-opt .picker-opt-meta {
+      margin-left: auto;
+      flex: none;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .picker-opt .picker-opt-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .picker-opt mark {
+      background: transparent;
+      color: var(--seq-600);
+      font-weight: 600;
+    }
+
+    .picker-opt[aria-selected="true"] {
+      color: var(--seq-650);
+    }
+
+    .picker-opt.active {
+      background: var(--ghost-strong);
+    }
+
+    .picker-empty,
+    .picker-foot {
+      padding: 8px 10px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .picker-foot {
+      border-top: 1px solid var(--border);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .picker-pop {
+        animation: picker-in .12s ease-out;
+      }
+    }
+
+    @keyframes picker-in {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
     }
 
     /* per-panel filter bar, sitting inside a card above its chart or table */
@@ -263,12 +430,6 @@
       align-self: flex-end;
       padding: 6px 12px;
       font-size: 12px;
-    }
-
-    .filters .note {
-      font-size: 11.5px;
-      color: var(--text-muted);
-      align-self: center;
     }
 
     /* ---------- layout ---------- */
@@ -684,25 +845,18 @@
         </div>
       </div>
       <div class="topbar-actions">
-        <span class="pill"><span class="dot" style="background:var(--good)"></span> API healthy</span>
-        <span class="pill" id="lastSync">Synced —</span>
-      </div>
-    </header>
-
-    <!-- ============ FILTERS (scope everything below) ============ -->
-    <section class="filters" aria-label="Dashboard filters">
-      <div class="field">
-        <label for="fRange">Date range</label>
-        <select id="fRange">
+        <!-- date range scopes every panel below, so it sits with the page chrome -->
+        <select id="fRange" class="topbar-range" aria-label="Date range">
           <option value="7">Last 7 days</option>
           <option value="30" selected>Last 30 days</option>
           <option value="90">Last 90 days</option>
           <option value="mtd">Month to date</option>
         </select>
+        <span class="pill" id="filterNote">—</span>
+        <span class="pill"><span class="dot" style="background:var(--good)"></span> API healthy</span>
+        <span class="pill" id="lastSync">Synced —</span>
       </div>
-      <div class="spacer"></div>
-      <div class="note" id="filterNote">—</div>
-    </section>
+    </header>
 
     <!-- ============ HERO + KPIs ============ -->
     <div class="grid cols-3 row">
@@ -757,14 +911,12 @@
             <div class="cap">Every strategy that called the API in this period, highest cost first. In table view,
               click a column header to sort.</div>
           </div>
-          <button class="toggle" type="button" data-tabletoggle="c-strategy" aria-pressed="false">Table</button>
+          <button class="toggle" type="button" data-tabletoggle="c-strategy" aria-pressed="true">Chart</button>
         </div>
         <div class="panel-filters" aria-label="Strategy panel filters">
           <div class="field">
-            <label for="fStratUser">User</label>
-            <select id="fStratUser">
-              <option value="all">All users</option>
-            </select>
+            <label id="fStratUser-label" for="fStratUser-btn">User</label>
+            <div class="picker" id="fStratUser"></div>
           </div>
           
           <div class="field">
@@ -775,9 +927,9 @@
           <div class="spacer"></div>
           <button class="toggle" type="button" id="stratReset">Reset</button>
         </div>
-        <div class="chart" id="c-strategy" role="img"
+        <div class="chart hidden" id="c-strategy" role="img"
           aria-label="Horizontal bar chart of Anthropic API spend per trading strategy."></div>
-        <div class="tablewrap hidden" id="t-strategy"></div>
+        <div class="tablewrap" id="t-strategy"></div>
       </div>
     </div>
 
@@ -798,10 +950,8 @@
             </select>
           </div>
           <div class="field">
-            <label for="fUserStrategy">Strategy</label>
-            <select id="fUserStrategy">
-              <option value="all">All strategies</option>
-            </select>
+            <label id="fUserStrategy-label" for="fUserStrategy-btn">Strategy</label>
+            <div class="picker" id="fUserStrategy"></div>
           </div>
           <div class="field">
             <label for="userSearch">User</label>
@@ -1700,14 +1850,288 @@
       });
     }
 
+    /* ---------------------------------------------------------------------
+       Searchable picker
+
+       A <select> is fine for a handful of options and unusable for thousands.
+       Anywhere the option set is unbounded — every user in the org, every
+       strategy — mount one of these instead: a trigger button that opens a
+       search box over a filtered listbox.
+
+       Matching is diacritic- and case-insensitive, ranked so prefix matches
+       come before word-start matches before loose substring matches, and the
+       rendered list is capped so a 10k-row set still opens instantly.
+       --------------------------------------------------------------------- */
+    const PICKER_RENDER_CAP = 100;
+
+    const foldText = (s) =>
+      String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    /* rank: 0 prefix, 1 word start, 2 substring, -1 no match */
+    function matchRank(haystack, needle) {
+      const i = haystack.indexOf(needle);
+      if (i < 0) return -1;
+      if (i === 0) return 0;
+      return /[\s\-_/.,(]/.test(haystack[i - 1]) ? 1 : 2;
+    }
+
+    function highlight(label, folded, needle) {
+      const frag = document.createDocumentFragment();
+      if (!needle) { frag.appendChild(document.createTextNode(label)); return frag; }
+      const i = folded.indexOf(needle);
+      if (i < 0) { frag.appendChild(document.createTextNode(label)); return frag; }
+      /* folded is built char-for-char from label, so offsets line up */
+      const mark = document.createElement("mark");
+      mark.textContent = label.slice(i, i + needle.length);
+      frag.appendChild(document.createTextNode(label.slice(0, i)));
+      frag.appendChild(mark);
+      frag.appendChild(document.createTextNode(label.slice(i + needle.length)));
+      return frag;
+    }
+
+    function createPicker(opts) {
+      const host = opts.host;
+      const id = host.id;
+      const allLabel = opts.allLabel;
+      const noun = opts.noun;                    // "users", "strategies"
+      const onChange = opts.onChange;
+
+      let items = [];                            // [{ value, label, meta }]
+      let value = "all";
+      let query = "";
+      let active = 0;                            // index into `shown`
+      let shown = [];
+      let open = false;
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "picker-btn";
+      btn.id = id + "-btn";
+      btn.setAttribute("aria-haspopup", "listbox");
+      btn.setAttribute("aria-expanded", "false");
+      btn.setAttribute("aria-controls", id + "-list");
+      btn.setAttribute("aria-labelledby", id + "-label " + id + "-btn");
+
+      const pop = document.createElement("div");
+      pop.className = "picker-pop hidden";
+
+      const searchWrap = document.createElement("div");
+      searchWrap.className = "picker-search-wrap";
+      const search = document.createElement("input");
+      search.type = "text";
+      search.className = "picker-search";
+      search.autocomplete = "off";
+      search.spellcheck = false;
+      search.placeholder = "Search " + noun + "…";
+      search.setAttribute("aria-label", "Search " + noun);
+      search.setAttribute("role", "combobox");
+      search.setAttribute("aria-expanded", "true");
+      search.setAttribute("aria-autocomplete", "list");
+      search.setAttribute("aria-controls", id + "-list");
+      searchWrap.appendChild(search);
+
+      const list = document.createElement("ul");
+      list.className = "picker-list";
+      list.id = id + "-list";
+      list.setAttribute("role", "listbox");
+      list.setAttribute("aria-label", allLabel);
+
+      const foot = document.createElement("div");
+      foot.className = "picker-foot hidden";
+
+      pop.appendChild(searchWrap);
+      pop.appendChild(list);
+      pop.appendChild(foot);
+      host.appendChild(btn);
+      host.appendChild(pop);
+
+      const labelFor = (v) => {
+        if (v === "all") return allLabel;
+        const hit = items.find((it) => it.value === v);
+        return hit ? hit.label : allLabel;
+      };
+
+      function paintButton() {
+        btn.textContent = labelFor(value);
+        btn.title = labelFor(value);
+        btn.setAttribute("data-active", String(value !== "all"));
+      }
+
+      function filtered() {
+        const q = foldText(query.trim());
+        const all = { value: "all", label: allLabel, meta: "", folded: foldText(allLabel) };
+        if (!q) return [all].concat(items);
+
+        const scored = [];
+        for (const it of items) {
+          let r = matchRank(it.folded, q);
+          if (r < 0 && it.metaFolded) {
+            const mr = matchRank(it.metaFolded, q);
+            if (mr >= 0) r = 3;                  // meta matches rank below label
+          }
+          if (r >= 0) scored.push([r, it]);
+        }
+        scored.sort((a, b) => a[0] - b[0] || a[1].order - b[1].order);
+        return scored.map((x) => x[1]);
+      }
+
+      function renderList() {
+        const all = filtered();
+        shown = all.slice(0, PICKER_RENDER_CAP);
+        active = Math.max(0, shown.findIndex((it) => it.value === value));
+        list.textContent = "";
+
+        if (!shown.length) {
+          const empty = document.createElement("li");
+          empty.className = "picker-empty";
+          empty.textContent = "No " + noun + " match “" + query.trim() + "”.";
+          list.appendChild(empty);
+        }
+
+        const q = foldText(query.trim());
+        shown.forEach((it, i) => {
+          const li = document.createElement("li");
+          li.className = "picker-opt" + (i === active ? " active" : "");
+          li.id = id + "-opt-" + i;
+          li.setAttribute("role", "option");
+          li.setAttribute("aria-selected", String(it.value === value));
+
+          const lab = document.createElement("span");
+          lab.className = "picker-opt-label";
+          lab.appendChild(highlight(it.label, it.folded, q));
+          li.appendChild(lab);
+
+          if (it.meta) {
+            const meta = document.createElement("span");
+            meta.className = "picker-opt-meta";
+            meta.textContent = it.meta;
+            li.appendChild(meta);
+          }
+
+          li.addEventListener("mousemove", () => setActive(i));
+          li.addEventListener("mousedown", (e) => e.preventDefault());
+          li.addEventListener("click", () => choose(it.value));
+          list.appendChild(li);
+        });
+
+        const hidden = all.length - shown.length;
+        foot.classList.toggle("hidden", hidden <= 0);
+        if (hidden > 0) {
+          foot.textContent = "Showing " + shown.length + " of " + nf.format(all.length) +
+            " — keep typing to narrow.";
+        }
+        search.setAttribute("aria-activedescendant", shown.length ? id + "-opt-" + active : "");
+      }
+
+      function setActive(i) {
+        if (!shown.length) return;
+        const prev = list.querySelector(".picker-opt.active");
+        if (prev) prev.classList.remove("active");
+        active = (i + shown.length) % shown.length;
+        const node = el(id + "-opt-" + active);
+        if (node) {
+          node.classList.add("active");
+          node.scrollIntoView({ block: "nearest" });
+        }
+        search.setAttribute("aria-activedescendant", id + "-opt-" + active);
+      }
+
+      function openPop() {
+        if (open) return;
+        open = true;
+        host.classList.add("open");
+        pop.classList.remove("hidden");
+        btn.setAttribute("aria-expanded", "true");
+        /* keep the panel inside the viewport on narrow screens */
+        pop.classList.remove("flip-right");
+        const r = pop.getBoundingClientRect();
+        if (r.right > window.innerWidth - 8) pop.classList.add("flip-right");
+        query = "";
+        search.value = "";
+        renderList();
+        search.focus();
+      }
+
+      function closePop(refocus) {
+        if (!open) return;
+        open = false;
+        host.classList.remove("open");
+        pop.classList.add("hidden");
+        btn.setAttribute("aria-expanded", "false");
+        if (refocus) btn.focus();
+      }
+
+      function choose(v) {
+        value = v;
+        paintButton();
+        closePop(true);
+        onChange(v);
+      }
+
+      btn.addEventListener("click", () => (open ? closePop(true) : openPop()));
+      btn.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+          e.preventDefault(); openPop();
+        }
+      });
+
+      search.addEventListener("input", (e) => { query = e.target.value; renderList(); });
+      search.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") { e.preventDefault(); setActive(active + 1); }
+        else if (e.key === "ArrowUp") { e.preventDefault(); setActive(active - 1); }
+        else if (e.key === "Home") { e.preventDefault(); setActive(0); }
+        else if (e.key === "End") { e.preventDefault(); setActive(shown.length - 1); }
+        else if (e.key === "PageDown") { e.preventDefault(); setActive(Math.min(active + 8, shown.length - 1)); }
+        else if (e.key === "PageUp") { e.preventDefault(); setActive(Math.max(active - 8, 0)); }
+        else if (e.key === "Enter") {
+          e.preventDefault();
+          if (shown[active]) choose(shown[active].value);
+        } else if (e.key === "Escape") { e.preventDefault(); closePop(true); }
+        else if (e.key === "Tab") closePop(false);
+      });
+
+      document.addEventListener("mousedown", (e) => {
+        if (open && !host.contains(e.target)) closePop(false);
+      });
+
+      return {
+        setItems(next) {
+          items = next.map((it, i) => ({
+            value: it.value, label: it.label, meta: it.meta || "", order: i,
+            folded: foldText(it.label),
+            metaFolded: it.meta ? foldText(it.meta) : "",
+          }));
+          paintButton();
+          if (open) renderList();
+        },
+        setValue(v) { value = v; paintButton(); },
+        get value() { return value; },
+      };
+    }
+
+    const pickers = {};
+
     function populateSelects() {
-      // strategy panel
-      addOptions(el("fStratUser"), USERS.map((u) => [u.id, u.name]));
+      // strategy panel — user list is unbounded, so it gets a searchable picker
+      pickers.stratUser = createPicker({
+        host: el("fStratUser"),
+        allLabel: "All users",
+        noun: "users",
+        onChange: (v) => { state.stratUser = v; renderStrategy(filterRecords(rangeDays(state.range))); },
+      });
+      pickers.stratUser.setItems(USERS.map((u) => ({ value: u.id, label: u.name, meta: u.plan })));
 
       // user panel
       const plans = [...new Set(USERS.map((u) => u.plan))];
       addOptions(el("fUserPlan"), plans.map((p) => [p, p]));
-      addOptions(el("fUserStrategy"), STRATEGIES.map((s) => [s.id, s.name]));
+
+      pickers.userStrategy = createPicker({
+        host: el("fUserStrategy"),
+        allLabel: "All strategies",
+        noun: "strategies",
+        onChange: (v) => { state.userStrategy = v; renderUsers(filterRecords(rangeDays(state.range))); },
+      });
+      pickers.userStrategy.setItems(STRATEGIES.map((s) => ({ value: s.id, label: s.name })));
     }
 
     /* refetch keeps the frame: hold the previous render at reduced opacity */
@@ -1731,10 +2155,11 @@
         state.userQuery = e.target.value.trim(); redrawUsers();
       });
       el("fUserPlan").addEventListener("change", (e) => { state.userPlan = e.target.value; redrawUsers(); });
-      el("fUserStrategy").addEventListener("change", (e) => { state.userStrategy = e.target.value; redrawUsers(); });
+      /* fUserStrategy is a picker — it redraws through its own onChange */
       el("userReset").addEventListener("click", () => {
         state.userQuery = ""; state.userPlan = "all"; state.userStrategy = "all";
-        el("userSearch").value = ""; el("fUserPlan").value = "all"; el("fUserStrategy").value = "all";
+        el("userSearch").value = ""; el("fUserPlan").value = "all";
+        pickers.userStrategy.setValue("all");
         redrawUsers();
       });
 
@@ -1743,10 +2168,11 @@
       el("stratSearch").addEventListener("input", (e) => {
         state.stratQuery = e.target.value.trim(); redrawStrategy();
       });
-      el("fStratUser").addEventListener("change", (e) => { state.stratUser = e.target.value; redrawStrategy(); });
+      /* fStratUser is a picker — it redraws through its own onChange */
       el("stratReset").addEventListener("click", () => {
         state.stratQuery = ""; state.stratUser = "all";
-        el("stratSearch").value = ""; el("fStratUser").value = "all";
+        el("stratSearch").value = "";
+        pickers.stratUser.setValue("all");
         redrawStrategy();
       });
 
@@ -1760,6 +2186,8 @@
           btn.textContent = showTable ? "Chart" : "Table";
           chart.classList.toggle("hidden", showTable);
           table.classList.toggle("hidden", !showTable);
+          /* charts measure their host, so one revealed from hidden must redraw */
+          if (!showTable) render();
         });
       });
 
