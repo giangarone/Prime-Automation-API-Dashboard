@@ -210,7 +210,8 @@
     }
 
     select,
-    input[type="search"] {
+    input[type="search"],
+    input[type="date"] {
       font: inherit;
       font-size: 13px;
       color: var(--text-primary);
@@ -219,6 +220,21 @@
       border-radius: 7px;
       padding: 6px 9px;
       min-width: 150px;
+    }
+
+    input[type="date"] {
+      min-width: 132px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.65);
+      cursor: pointer;
+    }
+
+    /* the two date inputs are narrower than a name search — let them shrink */
+    .panel-filters .field.field-date {
+      flex: 0 1 150px;
     }
 
     select {
@@ -415,7 +431,8 @@
     }
 
     .panel-filters select,
-    .panel-filters input[type="search"] {
+    .panel-filters input[type="search"],
+    .panel-filters input[type="date"] {
       min-width: 0;
       width: 100%;
       background-color: var(--surface-1);
@@ -732,56 +749,62 @@
       content: " ↑";
     }
 
-    .bar-cell {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      justify-content: flex-end;
-    }
-
-    .bar-cell .track {
-      width: 64px;
-      height: 6px;
-      border-radius: 3px;
-      background: rgba(255, 255, 255, 0.06);
-      overflow: hidden;
-      flex: none;
-    }
-
-    .bar-cell .fill {
-      height: 100%;
-      background: var(--seq-450);
-      border-radius: 3px;
-    }
-
-    /* ---------- footer notes ---------- */
-    .notes {
-      margin-top: 22px;
-    }
-
-    .notes h2 {
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
-
-    .notes p,
-    .notes li {
-      font-size: 12.5px;
-      color: var(--text-secondary);
-    }
-
-    .notes ul {
-      margin: 6px 0 0;
-      padding-left: 18px;
-    }
-
-    .notes code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 11.5px;
+    /* ---------- provenance tags (strategy "created by") ---------- */
+    .tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      padding: 1px 6px;
+      margin-right: 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
       background: var(--ghost-strong);
-      padding: 1px 5px;
-      border-radius: 4px;
-      color: var(--text-primary);
+      vertical-align: 1px;
+    }
+
+    .tag.user {
+      color: var(--series-1);
+    }
+
+    .tag.cron {
+      color: var(--series-5);
+    }
+
+    /* ---------- plain-language help tooltip ----------
+       Anything carrying data-help gets a hover/focus explainer. One shared
+       node, positioned fixed, so it escapes the tables' overflow clipping. */
+    [data-help] {
+      cursor: help;
+    }
+
+    th[data-help] {
+      text-decoration: underline dotted rgba(255, 255, 255, .24);
+      text-underline-offset: 4px;
+    }
+
+    .help-tip {
+      position: fixed;
+      z-index: 60;
+      left: 0;
+      top: 0;
+      max-width: 280px;
+      padding: 8px 10px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--text-secondary);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, .38);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .09s ease;
+    }
+
+    .help-tip.on {
+      opacity: 1;
     }
 
     .reloading {
@@ -846,15 +869,16 @@
       </div>
       <div class="topbar-actions">
         <!-- date range scopes every panel below, so it sits with the page chrome -->
-        <select id="fRange" class="topbar-range" aria-label="Date range">
+        <select id="fRange" class="topbar-range" aria-label="Date range"
+          data-help="Sets the window of time every panel on this page reports on, unless a panel has its own period filter set.">
           <option value="7">Last 7 days</option>
           <option value="30" selected>Last 30 days</option>
           <option value="90">Last 90 days</option>
           <option value="mtd">Month to date</option>
         </select>
-        <span class="pill" id="filterNote">—</span>
-        <span class="pill"><span class="dot" style="background:var(--good)"></span> API healthy</span>
-        <span class="pill" id="lastSync">Synced —</span>
+        <span class="pill" id="filterNote" data-help="How much data the page is reading right now: the number of days in range, and the number of raw metering rows behind the numbers.">—</span>
+        <span class="pill" data-help="Live status of the Anthropic API connection. Green means requests are going through normally."><span class="dot" style="background:var(--good)"></span> API healthy</span>
+        <span class="pill" id="lastSync" data-help="When this page last pulled fresh usage data.">Synced —</span>
       </div>
     </header>
 
@@ -862,24 +886,24 @@
     <div class="grid cols-3 row">
       <div class="card hero-card">
         <div>
-          <div class="cap" style="margin:0">Total API spend · <span id="heroRange">last 30 days</span></div>
+          <div class="cap" style="margin:0" data-help="Everything the organisation spent on Anthropic API calls in the selected period, across every user and every strategy.">Total API spend · <span id="heroRange">last 30 days</span></div>
           <div class="hero-value" id="heroSpend">$0</div>
           <div class="hero-sub">
-            <span class="delta" id="heroDelta">—</span>
+            <span class="delta" id="heroDelta" data-help="Change against the period just before this one, of the same length. Up means you are spending more than you were.">—</span>
             <span style="color:var(--text-muted)"> vs previous period</span>
           </div>
         </div>
         <div class="hero-sub" style="margin-top:14px; color:var(--text-muted)">
-          Blended <span id="heroPerReq" style="color:var(--text-secondary);font-weight:600">$0</span> / request ·
-          <span id="heroPerUser" style="color:var(--text-secondary);font-weight:600">$0</span> / active user
+          Blended <span id="heroPerReq" data-help="Total spend divided by total requests — the average price of a single API call in this period." style="color:var(--text-secondary);font-weight:600">$0</span> / request ·
+          <span id="heroPerUser" data-help="Total spend divided by the number of users who made at least one API call in this period." style="color:var(--text-secondary);font-weight:600">$0</span> / active user
         </div>
       </div>
 
       <div class="card span-2">
         <div class="card-head">
-          <h2>Headline metrics</h2>
+          <h2 data-help="Volume figures for the selected period. Each tile compares against the previous period of the same length and shows the day-by-day trend.">Headline metrics</h2>
         </div>
-        <div class="cap">Each tile shows the filtered period, with the prior equal-length period as the comparison.
+        <div class="cap" data-help="The percentage under each number is the change versus the previous period; the small line is the daily trend.">Each tile shows the filtered period, with the prior equal-length period as the comparison.
         </div>
         <div class="tiles" id="tiles"></div>
       </div>
@@ -892,9 +916,42 @@
         <div class="card-head">
           <div>
             <h2>Daily spend</h2>
-            <div class="cap">API cost per calendar day. Hover or use &larr; &rarr; to read a day.</div>
+            <div class="cap" data-help="One row (or column) per calendar day, showing what the Anthropic API cost that day. Hover a column, or use the &larr; &rarr; keys, to read a single day.">API cost per calendar day. Hover or use &larr; &rarr; to read a day.</div>
           </div>
-          <button class="toggle" type="button" data-tabletoggle="c-spend" aria-pressed="false">Table</button>
+          <button class="toggle" type="button" data-tabletoggle="c-spend" aria-pressed="false"
+            data-help="Switch between the column chart and the same numbers as a sortable table.">Table</button>
+        </div>
+        <div class="panel-filters" aria-label="Daily spend period filters">
+          <div class="field">
+            <label for="fSpendPeriod"
+              data-help="Pick the stretch of time this panel covers. Because spend data builds up over months and years, this filter works on its own and can look further back than the range chosen at the top of the page.">Period</label>
+            <select id="fSpendPeriod">
+              <option value="range">Match page range</option>
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="mtd">This month</option>
+              <option value="prevmonth">Last month</option>
+              <option value="qtd">This quarter</option>
+              <option value="ytd">This year</option>
+              <option value="prevyear">Last year</option>
+              <option value="all">All time</option>
+              <option value="custom">Custom range&hellip;</option>
+            </select>
+          </div>
+          <div class="field field-date">
+            <label for="fSpendFrom" data-help="First day included, counted from midnight UTC. Setting it switches the period to a custom range.">From</label>
+            <input type="date" id="fSpendFrom" />
+          </div>
+          <div class="field field-date">
+            <label for="fSpendTo" data-help="Last day included. Setting it switches the period to a custom range.">To</label>
+            <input type="date" id="fSpendTo" />
+          </div>
+          <div class="spacer"></div>
+          <span class="pill" id="spendScope"
+            data-help="How many days of data the chart and table below are currently showing.">&mdash;</span>
+          <button class="toggle" type="button" id="spendReset"
+            data-help="Clear this panel's period filter and follow the page range again.">Reset</button>
         </div>
         <div class="chart" id="c-spend" tabindex="0" role="img"
           aria-label="Column chart of daily Anthropic API spend."></div>
@@ -907,25 +964,26 @@
       <div class="card">
         <div class="card-head">
           <div>
-            <h2>Spend by AI strategy</h2>
+            <h2 data-help="What each automated trading strategy cost in API usage. A strategy is one automation that calls the AI on your behalf.">Spend by AI strategy</h2>
             <div class="cap">Every strategy that called the API in this period, highest cost first. In table view,
               click a column header to sort.</div>
           </div>
-          <button class="toggle" type="button" data-tabletoggle="c-strategy" aria-pressed="true">Chart</button>
+          <button class="toggle" type="button" data-tabletoggle="c-strategy" aria-pressed="true"
+            data-help="Switch between the bar chart and the detailed sortable table.">Chart</button>
         </div>
         <div class="panel-filters" aria-label="Strategy panel filters">
           <div class="field">
-            <label id="fStratUser-label" for="fStratUser-btn">User</label>
+            <label id="fStratUser-label" for="fStratUser-btn" data-help="Show only the strategies that this one person ran. Leave on “All users” to see the whole organisation.">User</label>
             <div class="picker" id="fStratUser"></div>
           </div>
           
           <div class="field">
-            <label for="stratSearch">Strategy</label>
+            <label for="stratSearch" data-help="Type part of a strategy name to narrow the list below.">Strategy</label>
             <input type="search" id="stratSearch" placeholder="Filter strategies&hellip;"
               aria-label="Filter strategies by name" />
           </div>
           <div class="spacer"></div>
-          <button class="toggle" type="button" id="stratReset">Reset</button>
+          <button class="toggle" type="button" id="stratReset" data-help="Clear this panel's user and strategy filters.">Reset</button>
         </div>
         <div class="chart hidden" id="c-strategy" role="img"
           aria-label="Horizontal bar chart of Anthropic API spend per trading strategy."></div>
@@ -938,59 +996,26 @@
       <div class="card">
         <div class="card-head">
           <div>
-            <h2>Usage by user</h2>
-            <div class="cap">Click a column header to sort. Share bars are relative to the top spender.</div>
+            <h2 data-help="What each person in the organisation cost in API usage, and how heavily they used it.">Usage by user</h2>
+            <div class="cap" data-help="One row per person, covering the period selected at the top of the page. Click any column header to sort by it.">Click a column header to sort.</div>
           </div>
         </div>
         <div class="panel-filters" aria-label="User panel filters">
           <div class="field">
-            <label for="fUserPlan">Plan</label>
-            <select id="fUserPlan">
-              <option value="all">All plans</option>
-            </select>
-          </div>
-          <div class="field">
-            <label id="fUserStrategy-label" for="fUserStrategy-btn">Strategy</label>
+            <label id="fUserStrategy-label" for="fUserStrategy-btn" data-help="Count only the usage that came from one particular strategy.">Strategy</label>
             <div class="picker" id="fUserStrategy"></div>
           </div>
           <div class="field">
-            <label for="userSearch">User</label>
+            <label for="userSearch" data-help="Type part of a name to find one person in the list.">User</label>
             <input type="search" id="userSearch" placeholder="Filter users&hellip;"
               aria-label="Filter users by name" />
           </div>
           <div class="spacer"></div>
-          <button class="toggle" type="button" id="userReset">Reset</button>
+          <button class="toggle" type="button" id="userReset" data-help="Clear this panel's strategy and user filters.">Reset</button>
         </div>
         <div class="tablewrap" id="t-users"></div>
       </div>
     </div>
-    <!-- ============ NOTES ============ -->
-    <section class="card notes">
-      <h2>Wiring this page to real data</h2>
-      <p>
-        Every number on this page is generated by the <code>MOCK</code> block at the top of the script so the
-        page is viewable standalone. Replace <code>loadRecords()</code> with a fetch against your own endpoint —
-        the rest of the page only ever reads the normalized record shape below.
-      </p>
-      <ul>
-        <li><strong>Record shape:</strong>
-          <code>{ day, userId, strategyId, surfaceId, requests, inputTokens, cacheReadTokens, cacheWriteTokens, outputTokens, errors, rateLimited }</code>
-        </li>
-        <li><strong>Org totals</strong> (spend, tokens) come from Anthropic's Admin API:
-          <code>GET /v1/organizations/usage_report/messages</code> and <code>GET /v1/organizations/cost_report</code>,
-          authenticated with an <em>admin</em> key. These group by API key and workspace.
-        </li>
-        <li><strong>Per-user and per-strategy attribution is yours to record.</strong> Anthropic does not know your
-          user IDs or strategy IDs, so log one metering row per call in your own database — user, strategy, surface,
-          and the <code>usage</code> block returned on every response
-          (<code>input_tokens</code>, <code>output_tokens</code>, <code>cache_read_input_tokens</code>,
-          <code>cache_creation_input_tokens</code>). Roll those rows up nightly and reconcile the totals against the
-          cost report so billing drift is caught early.
-        </li>
-        <li><strong>Cost is computed client-side</strong> from the <code>PRICING</code> rates — update them when rates
-          change, and keep cached-read at 0.1× and cache-write at 1.25× of the base input rate.</li>
-      </ul>
-    </section>
 
   </div>
 
@@ -1024,31 +1049,33 @@
       { id: "copilot", name: "Support Copilot", inTok: 6000, outTok: 700, cache: .52, rate: 2.1 },
     ];
 
+    /* createdVia: "user" — someone built it by hand in the app.
+                    "cron"  — a scheduled job generated it automatically. */
     const STRATEGIES = [
-      { id: "mom_breakout", name: "Momentum Breakout v3" },
-      { id: "mean_rev_eu", name: "Mean Reversion — EU Open" },
-      { id: "pairs_energy", name: "Pairs Trading — Energy" },
-      { id: "news_scalper", name: "News Sentiment Scalper" },
-      { id: "vol_harvest", name: "Volatility Harvester" },
-      { id: "trend_fut", name: "Trend Following — Futures" },
-      { id: "iv_crush", name: "Options IV Crush" },
-      { id: "crypto_arb", name: "Crypto Funding Arb" },
-      { id: "general", name: "General (no strategy)" },
+      { id: "mom_breakout", name: "Momentum Breakout v3", createdVia: "user", createdBy: "Marcus Feldman", createdOn: "2025-11-04" },
+      { id: "mean_rev_eu", name: "Mean Reversion — EU Open", createdVia: "user", createdBy: "Sofia Lindqvist", createdOn: "2026-01-19" },
+      { id: "pairs_energy", name: "Pairs Trading — Energy", createdVia: "cron", createdBy: "Nightly strategy sweep", createdOn: "2026-02-02" },
+      { id: "news_scalper", name: "News Sentiment Scalper", createdVia: "user", createdBy: "Rajesh Menon", createdOn: "2025-09-27" },
+      { id: "vol_harvest", name: "Volatility Harvester", createdVia: "cron", createdBy: "Weekly regime rebuild", createdOn: "2026-03-15" },
+      { id: "trend_fut", name: "Trend Following — Futures", createdVia: "user", createdBy: "Camille Dubois", createdOn: "2025-12-11" },
+      { id: "iv_crush", name: "Options IV Crush", createdVia: "cron", createdBy: "Earnings calendar job", createdOn: "2026-04-08" },
+      { id: "crypto_arb", name: "Crypto Funding Arb", createdVia: "user", createdBy: "Aria Vasquez", createdOn: "2026-05-21" },
+      { id: "general", name: "General (no strategy)", createdVia: "cron", createdBy: "System default", createdOn: "2025-06-01" },
     ];
 
     const USERS = [
-      { id: "u01", name: "Marcus Feldman", plan: "Elite", weight: 5.4 },
-      { id: "u02", name: "Sofia Lindqvist", plan: "Elite", weight: 4.1 },
-      { id: "u03", name: "Rajesh Menon", plan: "Elite", weight: 3.3 },
-      { id: "u04", name: "Camille Dubois", plan: "Elite", weight: 2.6 },
-      { id: "u05", name: "Aria Vasquez", plan: "Pro", weight: 1.9 },
-      { id: "u06", name: "Kenji Watanabe", plan: "Pro", weight: 1.6 },
-      { id: "u07", name: "Priya Raghunathan", plan: "Pro", weight: 1.4 },
-      { id: "u08", name: "Lukas Brandt", plan: "Pro", weight: 1.1 },
-      { id: "u09", name: "Fatima El-Amrani", plan: "Pro", weight: 0.9 },
-      { id: "u10", name: "Tomás Oliveira", plan: "Pro", weight: 0.6 },
-      { id: "u11", name: "Mira Sandoval", plan: "Pro", weight: 0.45 },
-      { id: "u12", name: "Sam Okonkwo", plan: "Pro", weight: 0.35 },
+      { id: "u01", name: "Marcus Feldman", weight: 5.4 },
+      { id: "u02", name: "Sofia Lindqvist", weight: 4.1 },
+      { id: "u03", name: "Rajesh Menon", weight: 3.3 },
+      { id: "u04", name: "Camille Dubois", weight: 2.6 },
+      { id: "u05", name: "Aria Vasquez", weight: 1.9 },
+      { id: "u06", name: "Kenji Watanabe", weight: 1.6 },
+      { id: "u07", name: "Priya Raghunathan", weight: 1.4 },
+      { id: "u08", name: "Lukas Brandt", weight: 1.1 },
+      { id: "u09", name: "Fatima El-Amrani", weight: 0.9 },
+      { id: "u10", name: "Tomás Oliveira", weight: 0.6 },
+      { id: "u11", name: "Mira Sandoval", weight: 0.45 },
+      { id: "u12", name: "Sam Okonkwo", weight: 0.35 },
     ];
 
     /* deterministic PRNG so the page renders identically every load */
@@ -1084,7 +1111,7 @@
       const userStrategies = {};
       USERS.forEach((u, ui) => {
         const picks = new Set(["general"]);
-        const n = u.plan === "Elite" ? 4 : u.plan === "Pro" ? 3 : 2;
+        const n = u.weight >= 2.5 ? 4 : 3;   // heavier users run more strategies
         for (let k = 0; k < n; k++) picks.add(STRATEGIES[(ui * 3 + k * 2 + 1) % 8].id);
         userStrategies[u.id] = [...picks];
       });
@@ -1168,6 +1195,10 @@
       const d = new Date(iso + "T00:00:00Z");
       return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
     }
+    function longDate(iso) {
+      const d = new Date(iso + "T00:00:00Z");
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+    }
     function cssVar(name) {
       return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     }
@@ -1214,9 +1245,11 @@
     const state = {
       range: "30",
       // "Usage by user" panel
-      userSort: { key: "cost", dir: -1 }, userQuery: "", userPlan: "all", userStrategy: "all",
+      userSort: { key: "cost", dir: -1 }, userQuery: "", userStrategy: "all",
       // "Spend by AI strategy" panel
       stratSort: { key: "value", dir: -1 }, stratQuery: "", stratUser: "all",
+      // "Daily spend" panel — its own period, independent of the page range
+      spendPeriod: "range", spendFrom: "", spendTo: "",
     };
 
     function rangeDays(range) {
@@ -1230,6 +1263,50 @@
       const start = Math.max(0, first - days.length);
       return ALL_DAYS.slice(start, first);
     }
+    /* The daily-spend panel carries its own period filter. Usage accumulates
+       over months and years, so this one is allowed to look further back than
+       the page range; "range" simply defers to the page range. */
+    const FIRST_DAY = ALL_DAYS[0];
+    const LAST_DAY = ALL_DAYS[ALL_DAYS.length - 1];
+    const TODAY_ISO = TODAY.toISOString().slice(0, 10);
+
+    function monthOf(iso) { return iso.slice(0, 7); }
+    function shiftMonth(ym, delta) {
+      const y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + delta;
+      const d = new Date(Date.UTC(y, m, 1));
+      return d.toISOString().slice(0, 7);
+    }
+
+    function spendDays() {
+      const p = state.spendPeriod;
+      if (p === "range") return rangeDays(state.range);
+      if (p === "all") return ALL_DAYS.slice();
+      if (p === "custom") {
+        const from = state.spendFrom || FIRST_DAY;
+        const to = state.spendTo || LAST_DAY;
+        return ALL_DAYS.filter((d) => d >= from && d <= to);
+      }
+      if (p === "mtd") return ALL_DAYS.filter((d) => monthOf(d) === monthOf(TODAY_ISO));
+      if (p === "prevmonth") {
+        const ym = shiftMonth(monthOf(TODAY_ISO), -1);
+        return ALL_DAYS.filter((d) => monthOf(d) === ym);
+      }
+      if (p === "qtd") {
+        const q = Math.floor(TODAY.getUTCMonth() / 3);
+        const y = TODAY.getUTCFullYear();
+        return ALL_DAYS.filter((d) => {
+          const dd = new Date(d + "T00:00:00Z");
+          return dd.getUTCFullYear() === y && Math.floor(dd.getUTCMonth() / 3) === q;
+        });
+      }
+      if (p === "ytd") return ALL_DAYS.filter((d) => d.slice(0, 4) === TODAY_ISO.slice(0, 4));
+      if (p === "prevyear") {
+        const y = String(TODAY.getUTCFullYear() - 1);
+        return ALL_DAYS.filter((d) => d.slice(0, 4) === y);
+      }
+      return ALL_DAYS.slice(-parseInt(p, 10));   // 7 / 30 / 90
+    }
+
     function filterRecords(days) {
       const set = new Set(days);
       return ALL_RECORDS.filter((r) => set.has(r.day));
@@ -1489,7 +1566,7 @@
     /* ============================================================================
        14. TABLE BUILDER (the accessibility twin of every chart)
        ========================================================================== */
-    function buildTable(host, caption, headers, rows, aligns) {
+    function buildTable(host, caption, headers, rows, aligns, helps) {
       host.replaceChildren();
       const t = document.createElement("table");
       const cap = document.createElement("caption"); cap.textContent = caption; t.appendChild(cap);
@@ -1500,6 +1577,7 @@
         th.textContent = h;
         th.scope = "col";
         if (aligns && aligns[i] === "num") th.className = "num";
+        if (helps && helps[i]) th.setAttribute("data-help", helps[i]);
         trh.appendChild(th);
       });
       thead.appendChild(trh); t.appendChild(thead);
@@ -1537,7 +1615,7 @@
 
       renderHero(days, cur, prev, recs);
       renderTiles(days, recs, cur, prev);
-      renderSpendChart(days, recs);
+      renderSpendChart();
       renderStrategy(recs);
       renderUsers(recs);
 
@@ -1569,14 +1647,17 @@
       const defs = [
         {
           label: "Requests", value: compact(cur.requests),
+          help: "How many separate calls were made to the Anthropic API in this period, across everyone.",
           cur: cur.requests, prev: prev.requests, goodUp: true, spark: series((a) => a.requests)
         },
         {
           label: "Total tokens", value: compact(totalTokens(cur)),
+          help: "All the text sent to and returned by the AI, counted in tokens — roughly three-quarters of a word each. Tokens are what you are billed on.",
           cur: totalTokens(cur), prev: totalTokens(prev), goodUp: true, spark: series(totalTokens)
         },
         {
           label: "Output tokens", value: compact(cur.outputTokens),
+          help: "Just the text the AI wrote back. Output costs about five times more per token than input, so this is the expensive half.",
           cur: cur.outputTokens, prev: prev.outputTokens, goodUp: true, spark: series((a) => a.outputTokens)
         },
       ];
@@ -1585,6 +1666,7 @@
       host.replaceChildren();
       defs.forEach((t) => {
         const w = document.createElement("div"); w.className = "tile";
+        if (t.help) w.setAttribute("data-help", t.help);
         const l = document.createElement("div"); l.className = "label"; l.textContent = t.label;
         const v = document.createElement("div"); v.className = "value"; v.textContent = t.value;
         const f = document.createElement("div"); f.className = "foot";
@@ -1603,16 +1685,48 @@
     }
 
     /* ---- daily spend ---- */
-    function renderSpendChart(days, recs) {
+    function renderSpendChart() {
+      const days = spendDays();
+      const recs = filterRecords(days);
       const byDay = groupBy(recs, (r) => r.day);
       const values = days.map((d) => { const a = byDay.get(d); return a ? a.cost : 0; });
+      const total = values.reduce((a, b) => a + b, 0);
 
       renderColumns(el("c-spend"), days, values);
 
-      buildTable(el("t-spend"), "Daily API spend (USD).",
-        ["Date", "Spend"],
-        days.map((d, i) => [shortDate(d), moneyPrecise(values[i])]),
-        ["txt", "num"]);
+      const label = days.length
+        ? days.length + " day" + (days.length === 1 ? "" : "s") + " · " + longDate(days[0]) + " – " + longDate(days[days.length - 1])
+        : "No days in this period";
+      el("spendScope").textContent = label;
+
+      buildTable(el("t-spend"),
+        "Daily API spend (USD) — " + label + ". Total " + moneyPrecise(total) + ".",
+        ["Date", "Spend", "Share of period", "Running total"],
+        days.map((d, i) => {
+          let run = 0;
+          for (let k = 0; k <= i; k++) run += values[k];
+          return [
+            longDate(d),
+            moneyPrecise(values[i]),
+            total ? pct(values[i] / total) : "0.0%",
+            moneyPrecise(run),
+          ];
+        }),
+        ["txt", "num", "num", "num"],
+        [
+          "The calendar day the spend happened on, in UTC.",
+          "What the Anthropic API cost that day, added up across every user and strategy.",
+          "How much of the whole period's spend fell on this day.",
+          "Spend accumulated from the first day of the period up to and including this one.",
+        ]);
+
+      if (!days.length) {
+        const note = document.createElement("div");
+        note.className = "cap";
+        note.style.margin = "8px 0 0";
+        note.textContent = "No data in this period.";
+        el("t-spend").appendChild(note);
+      }
     }
 
     /* ---- strategies ---- */
@@ -1625,13 +1739,49 @@
     }
 
     const STRATEGY_COLS = [
-      { key: "name", label: "Strategy", num: false },
-      { key: "value", label: "Cost", num: true, fmt: (r) => moneyPrecise(r.value) },
-      { key: "share", label: "Share", num: true, fmt: (r) => pct(r.share) },
-      { key: "requests", label: "Requests", num: true, fmt: (r) => num(r.requests) },
-      { key: "tokens", label: "Tokens", num: true, fmt: (r) => compact(r.tokens) },
-      { key: "perReq", label: "$ / request", num: true, fmt: (r) => money(r.perReq) },
-      { key: "cache", label: "Cache hit", num: true, fmt: (r) => pct(r.cache) },
+      {
+        key: "name", label: "Strategy", num: false,
+        help: "The name of the automation that made these API calls.",
+      },
+      {
+        key: "value", label: "Cost", num: true, fmt: (r) => moneyPrecise(r.value),
+        help: "What this strategy spent on the Anthropic API during the selected period.",
+      },
+      {
+        key: "share", label: "Share", num: true, fmt: (r) => pct(r.share),
+        help: "This strategy's slice of the total API spend shown in this panel.",
+      },
+      {
+        key: "requests", label: "Requests", num: true, fmt: (r) => num(r.requests),
+        help: "How many separate calls this strategy made to the AI.",
+      },
+      {
+        key: "tokens", label: "Tokens", num: true, fmt: (r) => compact(r.tokens),
+        help: "Total pieces of text sent and received. Tokens are roughly three-quarters of a word each, and they are what you are billed on.",
+      },
+      {
+        key: "perReq", label: "$ / request", num: true, fmt: (r) => money(r.perReq),
+        help: "Average cost of one call from this strategy — its cost divided by its number of requests.",
+      },
+      {
+        key: "cache", label: "Cache hit", num: true, fmt: (r) => pct(r.cache),
+        help: "Share of the incoming text that was reused from cache instead of being paid for in full. Cached text costs about a tenth as much, so higher is cheaper.",
+      },
+      {
+        key: "createdBy", label: "Created by", num: false,
+        help: "Who or what made this strategy: a person building it in the app, or a scheduled cron job that generated it automatically.",
+        cell: (td, r) => {
+          const tag = document.createElement("span");
+          tag.className = "tag " + r.createdVia;
+          tag.textContent = r.createdVia === "cron" ? "Cron" : "User";
+          td.appendChild(tag);
+          td.appendChild(document.createTextNode(r.createdBy));
+        },
+      },
+      {
+        key: "createdOn", label: "Created on", num: false, fmt: (r) => longDate(r.createdOn),
+        help: "The date this strategy was first created. It can be older than the period you are looking at.",
+      },
     ];
 
     function renderStrategy(recs) {
@@ -1639,13 +1789,18 @@
       const total = scoped.reduce(addTo, EMPTY());
       const byStrat = groupBy(scoped, (r) => r.strategyId);
 
-      let rows = [...byStrat.entries()].map(([id, a]) => ({
-        id, name: (STRATEGIES.find((s) => s.id === id) || { name: id }).name,
+      let rows = [...byStrat.entries()].map(([id, a]) => {
+        const meta = STRATEGIES.find((s) => s.id === id) ||
+          { name: id, createdVia: "cron", createdBy: "Unknown", createdOn: FIRST_DAY };
+        return {
+        id, name: meta.name,
+        createdVia: meta.createdVia, createdBy: meta.createdBy, createdOn: meta.createdOn,
         value: a.cost, requests: a.requests, tokens: totalTokens(a),
         share: total.cost ? a.cost / total.cost : 0,
         perReq: a.requests ? a.cost / a.requests : 0,
         cache: cacheHitRate(a),
-      }));
+        };
+      });
 
       if (state.stratQuery) {
         const q = state.stratQuery.toLowerCase();
@@ -1680,6 +1835,7 @@
         const th = document.createElement("th");
         th.textContent = c.label; th.scope = "col";
         if (c.num) th.className = "num";
+        if (c.help) th.setAttribute("data-help", c.help);
         th.classList.add("sortable");
         th.tabIndex = 0;
         th.setAttribute("aria-sort", key === c.key ? (dir === -1 ? "descending" : "ascending") : "none");
@@ -1700,8 +1856,9 @@
         const tr = document.createElement("tr");
         STRATEGY_COLS.forEach((c) => {
           const td = document.createElement("td");
-          td.textContent = c.fmt ? c.fmt(r) : r[c.key];
-          if (c.num) td.className = "num"; else td.classList.add("name");
+          if (c.cell) c.cell(td, r);
+          else td.textContent = c.fmt ? c.fmt(r) : r[c.key];
+          if (c.num) td.className = "num"; else if (c.key === "name") td.classList.add("name");
           tr.appendChild(td);
         });
         tb.appendChild(tr);
@@ -1733,7 +1890,7 @@
       let rows = USERS.filter((u) => byUser.has(u.id)).map((u) => {
         const a = byUser.get(u.id);
         return {
-          name: u.name, plan: u.plan,
+          name: u.name,
           cost: a.cost, requests: a.requests, tokens: totalTokens(a),
           perReq: a.requests ? a.cost / a.requests : 0,
           cache: cacheHitRate(a),
@@ -1742,7 +1899,6 @@
         };
       });
 
-      if (state.userPlan !== "all") rows = rows.filter((r) => r.plan === state.userPlan);
       if (state.userQuery) {
         const q = state.userQuery.toLowerCase();
         rows = rows.filter((r) => r.name.toLowerCase().includes(q));
@@ -1752,7 +1908,6 @@
         ? a[key].localeCompare(b[key]) * dir
         : (a[key] - b[key]) * dir));
 
-      const maxCost = Math.max(...rows.map((r) => r.cost), 0.0001);
       const host = el("t-users"); host.replaceChildren();
       const t = document.createElement("table");
       const cap = document.createElement("caption");
@@ -1760,33 +1915,31 @@
       t.appendChild(cap);
 
       const cols = [
-        { key: "name", label: "User / account", num: false },
-        { key: "cost", label: "Cost", num: true },
-        { key: "cost", label: "Share", num: true, bar: true },
-        { key: "requests", label: "Requests", num: true },
-        { key: "tokens", label: "Tokens", num: true },
-        { key: "perReq", label: "$ / req", num: true },
-        { key: "cache", label: "Cache hit", num: true },
-        { key: "errRate", label: "Failed", num: true },
-        { key: "strategies", label: "Strategies", num: true },
+        { key: "name", label: "User / account", num: false, help: "The person whose activity produced this row." },
+        { key: "cost", label: "Cost", num: true, help: "What this person's API calls cost during the selected period." },
+        { key: "requests", label: "Requests", num: true, help: "How many separate calls this person made to the AI." },
+        { key: "tokens", label: "Tokens", num: true, help: "Total pieces of text sent and received. Tokens are roughly three-quarters of a word each, and they are what you are billed on." },
+        { key: "perReq", label: "$ / req", num: true, help: "Average cost of one of this person's calls — their cost divided by their number of requests." },
+        { key: "cache", label: "Cache hit", num: true, help: "Share of the incoming text that was reused from cache instead of being paid for in full. Cached text costs about a tenth as much, so higher is cheaper." },
+        { key: "errRate", label: "Failed", num: true, help: "Share of this person's calls that did not succeed, either because of an error or because they were rate limited. Shown in red above 2%." },
+        { key: "strategies", label: "Strategies", num: true, help: "How many distinct strategies this person ran in the period. General, unattributed usage is not counted." },
       ];
       const thead = document.createElement("thead"); const tr = document.createElement("tr");
-      cols.forEach((c, i) => {
+      cols.forEach((c) => {
         const th = document.createElement("th");
         th.textContent = c.label; th.scope = "col";
         if (c.num) th.className = "num";
-        if (!c.bar) {
-          th.classList.add("sortable");
-          th.tabIndex = 0;
-          th.setAttribute("aria-sort", key === c.key ? (dir === -1 ? "descending" : "ascending") : "none");
-          const act = () => {
-            if (state.userSort.key === c.key) state.userSort.dir *= -1;
-            else state.userSort = { key: c.key, dir: c.num ? -1 : 1 };
-            renderUsers(recs);
-          };
-          th.addEventListener("click", act);
-          th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(); } });
-        }
+        if (c.help) th.setAttribute("data-help", c.help);
+        th.classList.add("sortable");
+        th.tabIndex = 0;
+        th.setAttribute("aria-sort", key === c.key ? (dir === -1 ? "descending" : "ascending") : "none");
+        const act = () => {
+          if (state.userSort.key === c.key) state.userSort.dir *= -1;
+          else state.userSort = { key: c.key, dir: c.num ? -1 : 1 };
+          renderUsers(recs);
+        };
+        th.addEventListener("click", act);
+        th.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(); } });
         tr.appendChild(th);
       });
       thead.appendChild(tr); t.appendChild(thead);
@@ -1797,7 +1950,6 @@
         const cells = [
           { text: r.name, cls: "name" },
           { text: moneyPrecise(r.cost), cls: "num" },
-          { bar: r.cost / maxCost },
           { text: num(r.requests), cls: "num" },
           { text: compact(r.tokens), cls: "num" },
           { text: money(r.perReq), cls: "num" },
@@ -1808,21 +1960,8 @@
         cells.forEach((c) => {
           const td = document.createElement("td");
           if (c.cls) td.className = c.cls;
-          if (c.bar !== undefined) {
-            td.className = "num";
-            const wrap = document.createElement("div"); wrap.className = "bar-cell";
-            const pctText = document.createElement("span");
-            pctText.textContent = pct(c.bar, 0);
-            const track = document.createElement("span"); track.className = "track";
-            const fill = document.createElement("span"); fill.className = "fill";
-            fill.style.width = (c.bar * 100).toFixed(1) + "%";
-            track.appendChild(fill);
-            wrap.append(pctText, track);
-            td.appendChild(wrap);
-          } else {
-            td.textContent = c.text;
-            if (c.warn) td.style.color = "var(--critical)";
-          }
+          td.textContent = c.text;
+          if (c.warn) td.style.color = "var(--critical)";
           row.appendChild(td);
         });
         tb.appendChild(row);
@@ -1842,14 +1981,6 @@
     /* ============================================================================
        16. WIRING
        ========================================================================== */
-    function addOptions(sel, items) {
-      items.forEach(([value, label]) => {
-        const o = document.createElement("option");
-        o.value = value; o.textContent = label;
-        sel.appendChild(o);
-      });
-    }
-
     /* ---------------------------------------------------------------------
        Searchable picker
 
@@ -2119,12 +2250,9 @@
         noun: "users",
         onChange: (v) => { state.stratUser = v; renderStrategy(filterRecords(rangeDays(state.range))); },
       });
-      pickers.stratUser.setItems(USERS.map((u) => ({ value: u.id, label: u.name, meta: u.plan })));
+      pickers.stratUser.setItems(USERS.map((u) => ({ value: u.id, label: u.name })));
 
       // user panel
-      const plans = [...new Set(USERS.map((u) => u.plan))];
-      addOptions(el("fUserPlan"), plans.map((p) => [p, p]));
-
       pickers.userStrategy = createPicker({
         host: el("fUserStrategy"),
         allLabel: "All strategies",
@@ -2147,18 +2275,21 @@
     }
 
     function bind() {
-      el("fRange").addEventListener("change", (e) => { state.range = e.target.value; softRender(); });
+      el("fRange").addEventListener("change", (e) => {
+        state.range = e.target.value;
+        softRender();
+        setTimeout(() => SYNC_SPEND_DATES(), 150);
+      });
 
       /* ---- "Usage by user" panel filters ---- */
       const redrawUsers = () => renderUsers(filterRecords(rangeDays(state.range)));
       el("userSearch").addEventListener("input", (e) => {
         state.userQuery = e.target.value.trim(); redrawUsers();
       });
-      el("fUserPlan").addEventListener("change", (e) => { state.userPlan = e.target.value; redrawUsers(); });
       /* fUserStrategy is a picker — it redraws through its own onChange */
       el("userReset").addEventListener("click", () => {
-        state.userQuery = ""; state.userPlan = "all"; state.userStrategy = "all";
-        el("userSearch").value = ""; el("fUserPlan").value = "all";
+        state.userQuery = ""; state.userStrategy = "all";
+        el("userSearch").value = "";
         pickers.userStrategy.setValue("all");
         redrawUsers();
       });
@@ -2175,6 +2306,50 @@
         pickers.stratUser.setValue("all");
         redrawStrategy();
       });
+
+      /* ---- "Daily spend" panel period ---- */
+      const fPeriod = el("fSpendPeriod"), fFrom = el("fSpendFrom"), fTo = el("fSpendTo");
+      fFrom.min = fTo.min = FIRST_DAY;
+      fFrom.max = fTo.max = LAST_DAY;
+
+      /* Custom is driven by the two date inputs; every other preset computes
+         its own window, so the inputs mirror it read-only-ish. */
+      function syncSpendDates() {
+        const days = spendDays();
+        if (state.spendPeriod !== "custom") {
+          fFrom.value = days.length ? days[0] : "";
+          fTo.value = days.length ? days[days.length - 1] : "";
+        }
+      }
+      fPeriod.addEventListener("change", (e) => {
+        state.spendPeriod = e.target.value;
+        if (state.spendPeriod === "custom") {
+          state.spendFrom = fFrom.value || FIRST_DAY;
+          state.spendTo = fTo.value || LAST_DAY;
+        }
+        renderSpendChart();
+        syncSpendDates();
+      });
+      const onDate = () => {
+        state.spendPeriod = "custom";
+        fPeriod.value = "custom";
+        state.spendFrom = fFrom.value || FIRST_DAY;
+        state.spendTo = fTo.value || LAST_DAY;
+        if (state.spendFrom > state.spendTo) {
+          const t = state.spendFrom; state.spendFrom = state.spendTo; state.spendTo = t;
+          fFrom.value = state.spendFrom; fTo.value = state.spendTo;
+        }
+        renderSpendChart();
+      };
+      fFrom.addEventListener("change", onDate);
+      fTo.addEventListener("change", onDate);
+      el("spendReset").addEventListener("click", () => {
+        state.spendPeriod = "range"; state.spendFrom = ""; state.spendTo = "";
+        fPeriod.value = "range";
+        renderSpendChart();
+        syncSpendDates();
+      });
+      SYNC_SPEND_DATES = syncSpendDates;
 
       document.querySelectorAll("[data-tabletoggle]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -2198,9 +2373,65 @@
       });
     }
 
+    /* ============================================================================
+       17. HELP TOOLTIPS
+
+       Anything with a data-help attribute — column headers, filter labels,
+       KPI tiles — explains itself in plain language on hover or keyboard
+       focus. One shared node, positioned fixed, so it is never clipped by a
+       table's horizontal scroll container.
+       ========================================================================== */
+    const helpTip = document.createElement("div");
+    helpTip.className = "help-tip";
+    helpTip.setAttribute("role", "tooltip");
+    document.body.appendChild(helpTip);
+
+    let helpTarget = null;
+
+    function showHelp(node) {
+      const text = node.getAttribute("data-help");
+      if (!text) return;
+      helpTarget = node;
+      helpTip.textContent = text;          // untrusted-safe: never innerHTML
+      helpTip.classList.add("on");
+
+      const r = node.getBoundingClientRect();
+      const tw = helpTip.offsetWidth, th = helpTip.offsetHeight;
+      const left = Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + r.width / 2 - tw / 2));
+      const above = r.top - th - 8;
+      helpTip.style.left = left + "px";
+      helpTip.style.top = (above >= 8 ? above : Math.min(window.innerHeight - th - 8, r.bottom + 8)) + "px";
+    }
+
+    function hideHelp() {
+      helpTarget = null;
+      helpTip.classList.remove("on");
+    }
+
+    function helpAncestor(node) {
+      return node && node.closest ? node.closest("[data-help]") : null;
+    }
+
+    document.addEventListener("pointerover", (e) => {
+      const n = helpAncestor(e.target);
+      if (n === helpTarget) return;
+      if (n) showHelp(n); else hideHelp();
+    });
+    document.addEventListener("focusin", (e) => {
+      const n = helpAncestor(e.target);
+      if (n) showHelp(n); else hideHelp();
+    });
+    document.addEventListener("focusout", hideHelp);
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideHelp(); });
+    window.addEventListener("scroll", hideHelp, true);
+    window.addEventListener("resize", hideHelp);
+
+    let SYNC_SPEND_DATES = () => {};
+
     populateSelects();
     bind();
     render();
+    SYNC_SPEND_DATES();
     el("lastSync").textContent = "Synced " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
   </script>
 </body>
