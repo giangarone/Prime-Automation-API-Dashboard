@@ -973,8 +973,12 @@
         </div>
         <div class="panel-filters" aria-label="Strategy panel filters">
           <div class="field">
-            <label id="fStratUser-label" for="fStratUser-btn" data-help="Show only the strategies that this one person ran. This is about who used the strategy, not who created it — see the “Created by” column for that. Leave on “All users” to see the whole organisation.">Run by</label>
+            <label id="fStratUser-label" for="fStratUser-btn" data-help="Show only the strategies that this one person ran — who spent the tokens. Leave on “All users” to see the whole organisation.">Run by</label>
             <div class="picker" id="fStratUser"></div>
+          </div>
+          <div class="field">
+            <label id="fStratCreator-label" for="fStratCreator-btn" data-help="Show only the strategies this person built, or the ones a cron job generated. This is about who made the strategy, not who used it — that is “Run by”.">Created by</label>
+            <div class="picker" id="fStratCreator"></div>
           </div>
           
           <div class="field">
@@ -983,7 +987,7 @@
               aria-label="Filter strategies by name" />
           </div>
           <div class="spacer"></div>
-          <button class="toggle" type="button" id="stratReset" data-help="Clear this panel's user and strategy filters.">Reset</button>
+          <button class="toggle" type="button" id="stratReset" data-help="Clear this panel's Run by, Created by and strategy filters.">Reset</button>
         </div>
         <div class="chart hidden" id="c-strategy" role="img"
           aria-label="Horizontal bar chart of Anthropic API spend per trading strategy."></div>
@@ -1049,18 +1053,19 @@
       { id: "copilot", name: "Support Copilot", inTok: 6000, outTok: 700, cache: .52, rate: 2.1 },
     ];
 
-    /* createdVia: "user" — someone built it by hand in the app.
-                    "cron"  — a scheduled job generated it automatically. */
+    /* createdVia: "user" — someone built it by hand in the app; createdBy is their name.
+                    "cron"  — a scheduled job generated it automatically. Every job is
+                              just "Cron": which job it was is not worth distinguishing. */
     const STRATEGIES = [
       { id: "mom_breakout", name: "Momentum Breakout v3", createdVia: "user", createdBy: "Marcus Feldman", createdOn: "2025-11-04" },
       { id: "mean_rev_eu", name: "Mean Reversion — EU Open", createdVia: "user", createdBy: "Sofia Lindqvist", createdOn: "2026-01-19" },
-      { id: "pairs_energy", name: "Pairs Trading — Energy", createdVia: "cron", createdBy: "Nightly strategy sweep", createdOn: "2026-02-02" },
+      { id: "pairs_energy", name: "Pairs Trading — Energy", createdVia: "cron", createdBy: "Cron", createdOn: "2026-02-02" },
       { id: "news_scalper", name: "News Sentiment Scalper", createdVia: "user", createdBy: "Rajesh Menon", createdOn: "2025-09-27" },
-      { id: "vol_harvest", name: "Volatility Harvester", createdVia: "cron", createdBy: "Weekly regime rebuild", createdOn: "2026-03-15" },
+      { id: "vol_harvest", name: "Volatility Harvester", createdVia: "cron", createdBy: "Cron", createdOn: "2026-03-15" },
       { id: "trend_fut", name: "Trend Following — Futures", createdVia: "user", createdBy: "Camille Dubois", createdOn: "2025-12-11" },
-      { id: "iv_crush", name: "Options IV Crush", createdVia: "cron", createdBy: "Earnings calendar job", createdOn: "2026-04-08" },
+      { id: "iv_crush", name: "Options IV Crush", createdVia: "cron", createdBy: "Cron", createdOn: "2026-04-08" },
       { id: "crypto_arb", name: "Crypto Funding Arb", createdVia: "user", createdBy: "Aria Vasquez", createdOn: "2026-05-21" },
-      { id: "general", name: "General (no strategy)", createdVia: "cron", createdBy: "System default", createdOn: "2025-06-01" },
+      { id: "general", name: "General (no strategy)", createdVia: "cron", createdBy: "Cron", createdOn: "2025-06-01" },
     ];
 
     const USERS = [
@@ -1247,7 +1252,7 @@
       // "Usage by user" panel
       userSort: { key: "cost", dir: -1 }, userQuery: "", userStrategy: "all",
       // "Spend by AI strategy" panel
-      stratSort: { key: "value", dir: -1 }, stratQuery: "", stratUser: "all",
+      stratSort: { key: "value", dir: -1 }, stratQuery: "", stratUser: "all", stratCreator: "all",
       // "Daily spend" panel — its own period, independent of the page range
       spendPeriod: "range", spendFrom: "", spendTo: "",
     };
@@ -1732,9 +1737,16 @@
     /* ---- strategies ---- */
     /* Panel-scoped filters: user, surface, and a name search. The chart and the
        table are two views of the same filtered row set. */
+    /* Who authored a strategy: a person's name, or "Cron" for anything scheduled. */
+    function creatorOf(strategyId) {
+      const meta = STRATEGIES.find((s) => s.id === strategyId);
+      return meta ? meta.createdBy : "Cron";
+    }
+
     function strategyRecords(recs) {
       return recs.filter((r) =>
-        state.stratUser === "all" || r.userId === state.stratUser
+        (state.stratUser === "all" || r.userId === state.stratUser) &&
+        (state.stratCreator === "all" || creatorOf(r.strategyId) === state.stratCreator)
       );
     }
 
@@ -1775,7 +1787,9 @@
           tag.className = "tag " + r.createdVia;
           tag.textContent = r.createdVia === "cron" ? "Cron" : "User";
           td.appendChild(tag);
-          td.appendChild(document.createTextNode(r.createdBy));
+          // A person's row carries their name; cron has none, so it says what it is.
+          td.appendChild(document.createTextNode(
+            r.createdVia === "cron" ? "Scheduled job" : r.createdBy));
         },
       },
       {
@@ -1791,7 +1805,7 @@
 
       let rows = [...byStrat.entries()].map(([id, a]) => {
         const meta = STRATEGIES.find((s) => s.id === id) ||
-          { name: id, createdVia: "cron", createdBy: "Unknown", createdOn: FIRST_DAY };
+          { name: id, createdVia: "cron", createdBy: "Cron", createdOn: FIRST_DAY };
         return {
         id, name: meta.name,
         createdVia: meta.createdVia, createdBy: meta.createdBy, createdOn: meta.createdOn,
@@ -2252,6 +2266,16 @@
       });
       pickers.stratUser.setItems(USERS.map((u) => ({ value: u.id, label: u.name })));
 
+      pickers.stratCreator = createPicker({
+        host: el("fStratCreator"),
+        allLabel: "Anyone",
+        noun: "creators",
+        onChange: (v) => { state.stratCreator = v; renderStrategy(filterRecords(rangeDays(state.range))); },
+      });
+      const creators = [...new Set(STRATEGIES.map((s) => s.createdBy))]
+        .sort((a, b) => (a === "Cron") - (b === "Cron") || a.localeCompare(b));
+      pickers.stratCreator.setItems(creators.map((c) => ({ value: c, label: c })));
+
       // user panel
       pickers.userStrategy = createPicker({
         host: el("fUserStrategy"),
@@ -2299,11 +2323,12 @@
       el("stratSearch").addEventListener("input", (e) => {
         state.stratQuery = e.target.value.trim(); redrawStrategy();
       });
-      /* fStratUser is a picker — it redraws through its own onChange */
+      /* fStratUser and fStratCreator are pickers — they redraw through their own onChange */
       el("stratReset").addEventListener("click", () => {
-        state.stratQuery = ""; state.stratUser = "all";
+        state.stratQuery = ""; state.stratUser = "all"; state.stratCreator = "all";
         el("stratSearch").value = "";
         pickers.stratUser.setValue("all");
+        pickers.stratCreator.setValue("all");
         redrawStrategy();
       });
 
